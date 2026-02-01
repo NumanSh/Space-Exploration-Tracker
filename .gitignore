@@ -1,0 +1,49 @@
+# Prerequisites
+*.d
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.aps
+*.ncb
+*.suo
+*.sln
+*.user
+*.userosscache
+*.sln.docstates
+*.x64
+*.x86
+*.tlog
+*.idb
+*.opt
+*_i.c
+*_p.c
+*_h.h
+*.sbr
+*.exp
+
+# CMake
+/build/
+/out/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Visual Studio
+.vs/
+Debug/
+Release/
+
+# Editors
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Dependencies
+external/
+!external/README.md
+vcpkg_installed/
