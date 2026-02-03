@@ -92,16 +92,26 @@ void UIManager::drawDashboard(const std::vector<Event>& events) {
     drawMenuBar();
 
     ImGui::TextColored(ImVec4(0.4f, 0.7f, 1.0f, 1.0f), "SPACE EXPLORATION DASHBOARD");
-    ImGui::SameLine(ImGui::GetWindowWidth() - 150);
-    ImGui::TextDisabled("Status: ONLINE");
+    ImGui::SameLine(ImGui::GetWindowWidth() - 180);
+    
+    if (events.empty()) {
+        ImGui::TextColored(ImVec4(1, 0.5f, 0, 1), "● Status: CONNECTING");
+    } else {
+        ImGui::TextColored(ImVec4(0, 1, 0, 1), "● Status: NASA ONLINE");
+    }
     ImGui::Separator();
 
     if (ImGui::BeginTabBar("MainTabs")) {
         if (ImGui::BeginTabItem("Astronomical Events")) {
-            if (ImGui::BeginChild("EventList", ImVec2(0, 0), true)) {
-                drawEventTable(events);
+            if (events.empty()) {
+                ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth()/2 - 100, ImGui::GetWindowHeight()/2));
+                ImGui::Text("Requesting Data from NASA NeoWs...");
+            } else {
+                if (ImGui::BeginChild("EventList", ImVec2(0, 0), true)) {
+                    drawEventTable(events);
+                }
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
             ImGui::EndTabItem();
         }
 
@@ -122,7 +132,7 @@ void UIManager::drawDashboard(const std::vector<Event>& events) {
 
 void UIManager::drawCharts(const std::vector<Event>& events) {
     if (events.empty()) {
-        ImGui::Text("Gathering data for analysis...");
+        ImGui::Text("Waiting for NASA telemetry data...");
         return;
     }
 
@@ -137,8 +147,9 @@ void UIManager::drawCharts(const std::vector<Event>& events) {
     }
 
     ImGui::BulletText("Velocity Distribution (km/h)");
-    if (ImPlot::BeginPlot("Object Velocities", ImVec2(-1, 300))) {
+    if (ImPlot::BeginPlot("Object Velocities", ImVec2(-1, 350))) {
         ImPlot::SetupAxes("Object Rank", "Velocity (km/h)");
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 150000);
         ImPlot::PlotBars("Velocity", x_indices.data(), velocities.data(), (int)velocities.size(), 0.5);
         ImPlot::EndPlot();
     }
@@ -150,30 +161,82 @@ void UIManager::drawCharts(const std::vector<Event>& events) {
 void UIManager::drawSimulator() {
     ImGui::Columns(2, "SimColumns", true);
     
-    ImGui::TextColored(ImVec4(1, 0.8f, 0, 1), "INPUT PARAMETERS");
-    ImGui::SliderFloat("Asteroid Mass (Tons)", &sim_asteroid_mass, 1.0f, 100000.0f);
-    ImGui::SliderFloat("Impact Velocity (km/s)", &sim_impact_angle, 1.0f, 72.0f); // Reusing variable for demo
+    ImGui::TextColored(ImVec4(1, 0.8f, 0, 1), "HYPOTHETICAL IMPACT CONFIGURATOR");
+    ImGui::Separator();
     
-    if (ImGui::Button("RUN SIMULATION", ImVec2(-1, 40))) {
-        // Simplified physical formula: D = c * E^(1/3)
-        // Kinetic Energy = 0.5 * m * v^2
-        float velocity_ms = sim_impact_angle * 1000.0f;
-        float energy = 0.5f * (sim_asteroid_mass * 1000.0f) * (velocity_ms * velocity_ms);
-        sim_predicted_crater = std::pow(energy, 1.0f/3.0f) * 0.01f;
+    ImGui::Spacing();
+    ImGui::Text("Step 1: Choose a Preset (optional)");
+    if (ImGui::Button("Small Meteor (Chelyabinsk)")) {
+        sim_asteroid_mass = 12000.0f;
+        sim_impact_angle = 19.0f;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Tunguska Event")) {
+        sim_asteroid_mass = 100000.0f;
+        sim_impact_angle = 20.0f;
+    }
+    if (ImGui::Button("Dinosaur Extinction (Chicxulub)")) {
+        sim_asteroid_mass = 1.0e12f; // Trillions of tons
+        sim_impact_angle = 20.0f;
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Step 2: Custom Parameters");
+    
+    ImGui::SliderFloat("Mass (Tons)", &sim_asteroid_mass, 1.0f, 1000000.0f, "%.0f");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("The weight of the object affects the total kinetic energy release.");
+    
+    ImGui::SliderFloat("Velocity (km/s)", &sim_impact_angle, 1.0f, 72.0f, "%.1f");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Space velocity is the most critical factor in impact force.");
+    
+    ImGui::Spacing();
+    if (ImGui::Button("CALCULATE IMPACT FORCE", ImVec2(-1, 40))) {
+        // Simple Physics: E = 0.5 * m * v^2
+        double velocity_ms = (double)sim_impact_angle * 1000.0;
+        double mass_kg = (double)sim_asteroid_mass * 1000.0;
+        double energy = 0.5 * mass_kg * (velocity_ms * velocity_ms);
+        
+        // Crater estimate (Simplified)
+        sim_predicted_crater = (float)(std::pow(energy, 1.0/3.4) * 0.05);
     }
 
     ImGui::NextColumn();
 
-    ImGui::TextColored(ImVec4(0, 1, 0, 1), "PREDICTED RESULTS");
-    ImGui::BeginChild("ResultsFrame", ImVec2(0, 200), true);
-    ImGui::Text("Kinetic Energy: %.2e Joules", 0.5f * sim_asteroid_mass * std::pow(sim_impact_angle * 1000, 2));
-    ImGui::Separator();
-    ImGui::Text("Estimated Crater Diameter:");
-    ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "%.2f Meters", sim_predicted_crater);
+    ImGui::TextColored(ImVec4(0, 1, 0, 1), "SCIENTIFIC PROJECTION");
+    ImGui::BeginChild("ResultsFrame", ImVec2(0, 0), true);
     
-    if (sim_predicted_crater > 500) {
-        ImGui::TextColored(ImVec4(1, 0, 0, 1), "WARNING: REGIONAL IMPACT EVENT");
+    ImU32 severity_color = IM_COL32(200, 200, 200, 255);
+    std::string severity_text = "Minor Impact";
+
+    if (sim_predicted_crater > 5000) {
+        severity_color = IM_COL32(255, 0, 0, 255);
+        severity_text = "GLOBAL CATASTROPHE";
+    } else if (sim_predicted_crater > 1000) {
+        severity_color = IM_COL32(255, 128, 0, 255);
+        severity_text = "REGIONAL DESTRUCTION";
+    } else if (sim_predicted_crater > 100) {
+        severity_color = IM_COL32(255, 255, 0, 255);
+        severity_text = "LOCAL IMPACT EVENT";
     }
+
+    ImGui::Text("Event Type:");
+    ImGui::PushStyleColor(ImGuiCol_Text, severity_color);
+    ImGui::SetWindowFontScale(1.5f);
+    ImGui::Text("%s", severity_text.c_str());
+    ImGui::PopStyleColor();
+    ImGui::SetWindowFontScale(1.0f);
+    
+    ImGui::Separator();
+    ImGui::Spacing();
+    
+    ImGui::Text("Estimated Crater Diameter:");
+    ImGui::TextColored(ImVec4(1, 0.5f, 0.2f, 1), "%.2f Meters", sim_predicted_crater);
+    
+    ImGui::Spacing();
+    ImGui::Text("Impact Energy:");
+    ImGui::Text("%.2e Joules", 0.5 * (sim_asteroid_mass * 1000.0) * std::pow(sim_impact_angle * 1000.0, 2));
+
     ImGui::EndChild();
 
     ImGui::Columns(1);
