@@ -10,6 +10,7 @@ struct UserSettings {
     double longitude = 0.0;
     std::string location_name = "Unknown";
     std::vector<std::string> watchlist;
+    int refresh_interval = 60; // Default to 60 seconds
 
     // Convert to JSON
     nlohmann::json toJson() const {
@@ -18,7 +19,8 @@ struct UserSettings {
             {"latitude", latitude},
             {"longitude", longitude},
             {"location_name", location_name},
-            {"watchlist", watchlist}
+            {"watchlist", watchlist},
+            {"refresh_interval", refresh_interval}
         };
     }
 
@@ -29,6 +31,7 @@ struct UserSettings {
         longitude = j.value("longitude", 0.0);
         location_name = j.value("location_name", "Unknown");
         watchlist = j.value("watchlist", std::vector<std::string>());
+        refresh_interval = j.value("refresh_interval", 60);
     }
 };
 
