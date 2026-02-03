@@ -45,8 +45,16 @@ private:
     std::string title_;
     GLFWwindow* window_ = nullptr;
     
+    // Simulator State
+    float sim_asteroid_mass = 1000.0f;
+    float sim_impact_angle = 45.0f;
+    float sim_predicted_crater = 0.0f;
+
     // Internal UI logic
     void drawDashboard(const std::vector<Event>& events);
     void drawMenuBar();
     void drawEventTable(const std::vector<Event>& events);
+    void drawCharts(const std::vector<Event>& events);
+    void drawSimulator();
+    void drawSettingsPopup();
 };
