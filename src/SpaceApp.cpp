@@ -22,6 +22,16 @@ void SpaceApp::start() {
         return;
     }
 
+    // Do an initial fetch immediately so data is ready when UI appears
+    std::cout << "[Startup] Performing initial data fetch...\n";
+    std::vector<Event> initial_events;
+    if (fetcher_.fetchNeoWsFeed("2024-01-01", "2024-01-02", initial_events)) {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        current_events_ = initial_events;
+        std::cout << "[Startup] Loaded " << current_events_.size() << " events.\n";
+        config_.writeLog("Initial fetch: " + std::to_string(current_events_.size()) + " asteroids.");
+    }
+
     running_ = true;
     poller_thread_ = std::thread(&SpaceApp::pollingLoop, this);
     config_.writeLog("Application started background poller.");

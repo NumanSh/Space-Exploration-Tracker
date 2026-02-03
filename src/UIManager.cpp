@@ -1,3 +1,4 @@
+#include "UIManager.h"
 #include <imgui.h>
 #include <implot.h>
 #include <backends/imgui_impl_glfw.h>
@@ -6,6 +7,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 UIManager::UIManager(const std::string& title) : title_(title) {}
 
@@ -79,8 +81,6 @@ void UIManager::render(const std::vector<Event>& events) {
 
     glfwSwapBuffers(window_);
 }
-
-#include "UIManager.h"
 
 void UIManager::drawDashboard(const std::vector<Event>& events) {
     ImGui::SetNextWindowPos(ImVec2(0, 0));
