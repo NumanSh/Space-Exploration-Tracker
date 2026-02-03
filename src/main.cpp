@@ -1,53 +1,64 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include "DataFetcher.h"
+#include <chrono>
+#include "SpaceApp.h"
 #include "Event.h"
 
-void printEvents(const std::vector<Event>& events) {
-    std::cout << "\n--- Near Earth Objects (Asteroids) ---\n";
-    if (events.empty()) {
-        std::cout << "No events found or fetch failed.\n";
-        return;
-    }
+void displayDashboard(SpaceApp& app) {
+    auto settings = app.getUserSettings();
+    auto events = app.getLatestEvents();
 
-    for (const auto& e : events) {
-        std::cout << "ID: " << e.id << " | Name: " << e.name 
-                  << " | Date: " << e.date_str;
-        if (e.is_hazardous) std::cout << " [HAZARDOUS]";
-        std::cout << "\n";
-        if (e.velocity_kph > 0) std::cout << "  - Velocity: " << e.velocity_kph << " km/h\n";
-        if (e.close_approach_km > 0) std::cout << "  - Miss Dist: " << e.close_approach_km << " km\n";
-        std::cout << "  - Link: " << e.details.at("nasa_jpl_url") << "\n";
+    std::cout << "\n======================================\n";
+    std::cout << " WELCOME, " << settings.user_name << "\n";
+    std::cout << " Location: " << settings.location_name << "\n";
+    std::cout << "======================================\n";
+    
+    if (events.empty()) {
+        std::cout << "Waiting for initial data fetch...\n";
+    } else {
+        std::cout << "Latest Asteroid Briefing (" << events.size() << " objects):\n";
+        for (size_t i = 0; i < std::min(events.size(), (size_t)5); ++i) {
+            std::cout << " - " << events[i].name;
+            if (events[i].is_hazardous) std::cout << " [!]";
+            std::cout << " (Velocity: " << (int)events[i].velocity_kph << " km/h)\n";
+        }
+        if (events.size() > 5) std::cout << " ... and " << (events.size() - 5) << " more.\n";
     }
-    std::cout << "--------------------------------------\n";
+    std::cout << "======================================\n";
+    std::cout << "Commands: [r] Refresh Display, [s] Change Name, [q] Quit\n";
+    std::cout << "Choice: ";
 }
 
 int main() {
-    std::cout << "Space Exploration Tracker - Console Test\n";
-    
-    // IMPORTANT: In a real scenario, we would ask the user for their key.
-    // For now, we will try with DEMO_KEY.
-    DataFetcher fetcher("DEMO_KEY");
+    try {
+        SpaceApp app;
+        app.start();
 
-    // Get today's date for the query (Simplified hardcoded for test, ideally dynamic)
-    // NASA API format: YYYY-MM-DD
-    std::string start_date = "2024-01-01"; 
-    std::string end_date = "2024-01-02";
+        char choice = ' ';
+        while (choice != 'q') {
+            displayDashboard(app);
+            std::cin >> choice;
 
-    std::cout << "Fetching NeoWs data for " << start_date << " to " << end_date << "...\n";
+            if (choice == 's') {
+                std::cout << "Enter new name: ";
+                std::string res;
+                std::cin >> res;
+                
+                auto settings = app.getUserSettings();
+                settings.user_name = res;
+                app.setUserSettings(settings);
+                std::cout << "Settings saved to disk!\n";
+            }
+        }
 
-    std::vector<Event> events;
-    bool success = fetcher.fetchNeoWsFeed(start_date, end_date, events);
+        std::cout << "Shutting down...\n";
+        app.stop();
 
-    if (success) {
-        std::cout << "Successfully fetched " << events.size() << " events.\n";
-        printEvents(events);
-    } else {
-        std::cerr << "Failed to fetch data. Check your internet or API key limits.\n";
+    } catch (const std::exception& e) {
+        std::cerr << "\n[CRITICAL ERROR] " << e.what() << "\n";
+        return 1;
     }
 
-    std::cout << "\nPress Enter to exit...";
-    std::cin.ignore();
     return 0;
 }
