@@ -12,7 +12,7 @@ endif()
 # Include FetchContent
 include(FetchContent)
 
-# nlohmann/json
+# 1. nlohmann/json
 FetchContent_Declare(
     json
     GIT_REPOSITORY https://github.com/nlohmann/json.git
@@ -20,7 +20,7 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
-# cpp-httplib
+# 2. cpp-httplib
 FetchContent_Declare(
     httplib
     GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
@@ -28,8 +28,38 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(httplib)
 
+# 3. GLFW (Windowing & Inputs)
+FetchContent_Declare(
+    glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG 3.3.8
+)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(glfw)
+
+# 4. Dear ImGui (UI Framework)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.89.9
+)
+FetchContent_MakeAvailable(imgui)
+
+# 5. ImPlot (Data Visualization)
+FetchContent_Declare(
+    implot
+    GIT_REPOSITORY https://github.com/epezent/implot.git
+    GIT_TAG v0.16
+)
+FetchContent_MakeAvailable(implot)
+
 # Add include directory
 include_directories(include)
+include_directories(${imgui_SOURCE_DIR})
+include_directories(${imgui_SOURCE_DIR}/backends)
+include_directories(${implot_SOURCE_DIR})
 
 # --- OPENSSL SETUP ---
 set(OPENSSL_ROOT_DIR "C:/Program Files/OpenSSL-Win64")
@@ -50,6 +80,17 @@ set(SOURCES
     src/DataFetcher.cpp
     src/ConfigManager.cpp
     src/SpaceApp.cpp
+    src/UIManager.cpp
+    # ImGui Implementation Files (will be added as we implement the UI)
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    ${implot_SOURCE_DIR}/implot.cpp
+    ${implot_SOURCE_DIR}/implot_items.cpp
 )
 
 # Executable
@@ -59,6 +100,8 @@ add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE 
     nlohmann_json::nlohmann_json 
     httplib::httplib
+    glfw
+    opengl32
 )
 
 if(OPENSSL_FOUND)

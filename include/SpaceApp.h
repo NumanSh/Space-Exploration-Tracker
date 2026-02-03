@@ -7,6 +7,7 @@
 #include "Event.h"
 #include "DataFetcher.h"
 #include "ConfigManager.h"
+#include "UIManager.h"
 
 class SpaceApp {
 public:
@@ -14,6 +15,7 @@ public:
     ~SpaceApp();
 
     void start();
+    void run(); // Main UI Loop
     void stop();
 
     // Data access
@@ -26,6 +28,7 @@ private:
 
     DataFetcher fetcher_;
     ConfigManager config_;
+    UIManager ui_;
     UserSettings settings_;
 
     std::vector<Event> current_events_;

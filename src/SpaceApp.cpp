@@ -17,9 +17,21 @@ SpaceApp::~SpaceApp() {
 void SpaceApp::start() {
     if (running_) return;
 
+    if (!ui_.init()) {
+        config_.writeLog("Failed to initialize UI. Exiting.");
+        return;
+    }
+
     running_ = true;
     poller_thread_ = std::thread(&SpaceApp::pollingLoop, this);
     config_.writeLog("Application started background poller.");
+}
+
+void SpaceApp::run() {
+    while (!ui_.shouldClose()) {
+        std::vector<Event> events = getLatestEvents();
+        ui_.render(events);
+    }
 }
 
 void SpaceApp::stop() {
