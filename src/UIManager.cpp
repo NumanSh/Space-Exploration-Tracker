@@ -136,26 +136,57 @@ void UIManager::drawCharts(const std::vector<Event>& events) {
         return;
     }
 
+    // --- Chart 1: Velocity Bar Chart ---
     static std::vector<float> velocities;
     static std::vector<float> x_indices;
+    static std::vector<const char*> labels; // For tooltips
+    
     velocities.clear();
     x_indices.clear();
+    labels.clear();
 
     for (size_t i = 0; i < events.size(); ++i) {
         velocities.push_back((float)events[i].velocity_kph);
         x_indices.push_back((float)i);
+        labels.push_back(events[i].name.c_str());
     }
 
-    ImGui::BulletText("Velocity Distribution (km/h)");
-    if (ImPlot::BeginPlot("Object Velocities", ImVec2(-1, 350))) {
-        ImPlot::SetupAxes("Object Rank", "Velocity (km/h)");
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 1.0f, 1.0f), "● ASTEROID VELOCITY COMPARISON");
+    if (ImPlot::BeginPlot("Relative Velocity", ImVec2(-1, 250))) {
+        ImPlot::SetupAxes("Asteroid Index", "Velocity (km/h)");
         ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 150000);
-        ImPlot::PlotBars("Velocity", x_indices.data(), velocities.data(), (int)velocities.size(), 0.5);
+        
+        // Render bars
+        ImPlot::PlotBars("Speed", x_indices.data(), velocities.data(), (int)velocities.size(), 0.5);
+
+        // Custom Tooltips: Show Name when hovering
+        if (ImPlot::IsPlotHovered()) {
+            ImPlotPoint mouse = ImPlot::GetPlotMousePos();
+            int index = (int)(mouse.x + 0.5f); // Simple rounding to find nearest bar
+            if (index >= 0 && index < (int)labels.size()) {
+                ImPlot::PlotText(labels[index], (float)index, velocities[index] + 5000, false, ImVec2(0,0));
+            }
+        }
         ImPlot::EndPlot();
     }
 
     ImGui::Separator();
-    ImGui::TextWrapped("This chart visualizes the relative speeds of currently tracked Near-Earth Objects. Higher bars indicate faster-moving celestial bodies.");
+    ImGui::Spacing();
+
+    // --- Chart 2: Correlation Scatter Plot ---
+    static std::vector<float> miss_distances;
+    miss_distances.clear();
+    for (const auto& e : events) {
+        miss_distances.push_back((float)e.close_approach_km / 1000.0f); // Convert to 1000s of km
+    }
+
+    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.8f, 1.0f), "● DISTANCE vs VELOCITY CORRELATION");
+    if (ImPlot::BeginPlot("Scatter Analysis", ImVec2(-1, 250))) {
+        ImPlot::SetupAxes("Miss Distance (x1000 km)", "Velocity (km/h)");
+        ImPlot::PlotScatter("Asteroids", miss_distances.data(), velocities.data(), (int)events.size());
+        ImPlot::EndPlot();
+    }
+    ImGui::TextWrapped("Correlation analysis helps identify if faster objects tend to pass closer to Earth.");
 }
 
 void UIManager::drawSimulator() {
