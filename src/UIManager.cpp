@@ -159,12 +159,17 @@ void UIManager::drawCharts(const std::vector<Event>& events) {
         // Render bars
         ImPlot::PlotBars("Speed", x_indices.data(), velocities.data(), (int)velocities.size(), 0.5);
 
-        // Custom Tooltips: Show Name when hovering
+        // Standard ImGui Tooltip: Much safer and better looking
         if (ImPlot::IsPlotHovered()) {
             ImPlotPoint mouse = ImPlot::GetPlotMousePos();
-            int index = (int)(mouse.x + 0.5f); // Simple rounding to find nearest bar
-            if (index >= 0 && index < (int)labels.size()) {
-                ImPlot::PlotText(labels[index], (float)index, velocities[index] + 5000, false, ImVec2(0,0));
+            int index = (int)(mouse.x + 0.5f); 
+            if (index >= 0 && index < (int)events.size()) {
+                ImGui::BeginTooltip();
+                ImGui::TextColored(ImVec4(0, 1, 1, 1), "Asteroid: %s", events[index].name.c_str());
+                ImGui::Separator();
+                ImGui::Text("Velocity: %.2f km/h", events[index].velocity_kph);
+                ImGui::Text("Hazardous: %s", events[index].is_hazardous ? "YES" : "No");
+                ImGui::EndTooltip();
             }
         }
         ImPlot::EndPlot();
